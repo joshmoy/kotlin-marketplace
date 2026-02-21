@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product — Seller A</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 420px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .seller { color: #666; font-size: 0.9rem; margin-bottom: 1rem; }
+    .price { font-size: 1.5rem; font-weight: 700; margin: 1rem 0; }
+    label { display: block; margin-top: 1rem; font-weight: 500; }
+    input { width: 100%; padding: 0.5rem; margin-top: 0.25rem; }
+    button { width: 100%; margin-top: 1.5rem; padding: 0.75rem; background: #00c3f7; color: #000; border: none; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .error { color: #c00; margin-top: 0.5rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Wireless Earbuds Pro</h1>
+  <p class="seller">Sold by <strong>Seller A</strong></p>
+  <p>Noise-cancelling, 24hr battery. Premium sound.</p>
+  <p class="price">₦15,000</p>
+
+  <form id="pay-form">
+    <label for="email">Your email</label>
+    <input type="email" id="email" name="email" required placeholder="you@example.com">
+    <div id="error" class="error" aria-live="polite"></div>
+    <button type="submit" id="btn">Pay with Paystack</button>
+  </form>
+
+  <script>
+    const form = document.getElementById('pay-form');
+    const emailInput = document.getElementById('email');
+    const errorEl = document.getElementById('error');
+    const btn = document.getElementById('btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.textContent = '';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/initialize-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailInput.value.trim(),
+            amountKobo: 15000_00,
+            productName: 'Wireless Earbuds Pro'
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.textContent = data.error || 'Payment initialization failed';
+          btn.disabled = false;
+          return;
+        }
+
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url;
+          return;
+        }
+        errorEl.textContent = 'No checkout URL received';
+      } catch (err) {
+        errorEl.textContent = err.message || 'Network error';
+      }
+      btn.disabled = false;
+    });
+  </script>
+</body>
+</html>
